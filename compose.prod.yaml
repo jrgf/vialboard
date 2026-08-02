@@ -1,0 +1,23 @@
+services:
+  api:
+    build: .
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      VIAL_HTTP_HOST: 0.0.0.0
+      VIAL_HTTP_PORT: 8080
+    ports:
+      - "${VIALBOARD_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "vialboard", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3

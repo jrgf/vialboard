@@ -1,0 +1,63 @@
+services:
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgres://vialboard:vialboard@db:5432/vialboard?sslmode=disable
+      VIAL_HTTP_HOST: 0.0.0.0
+      VIAL_HTTP_PORT: 8080
+      VIAL_SEED_OWNER_USERNAME: vialboard
+      VIAL_USER_PASSWORD: vialboard
+      VIAL_USER_ROLE: admin
+      VIAL_USER_USERNAME: vialboard
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:18.4-alpine
+    environment:
+      POSTGRES_DB: vialboard
+      POSTGRES_USER: vialboard
+      POSTGRES_PASSWORD: vialboard
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vialboard -d vialboard"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+
+  backup:
+    image: postgres:18.4-alpine
+    profiles: ["tools"]
+    environment:
+      PGPASSWORD: vialboard
+    volumes:
+      - ./backups:/backups
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - 'pg_dump -h db -U vialboard -d vialboard --format=custom --file="/backups/vialboard-$$(date -u +%Y%m%dT%H%M%SZ).dump"'
+    depends_on:
+      db:
+        condition: service_healthy
+
+  restore:
+    image: postgres:18.4-alpine
+    profiles: ["tools"]
+    environment:
+      PGPASSWORD: vialboard
+    volumes:
+      - ./backups:/backups:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - 'test -n "$$BACKUP_FILE" && pg_restore --clean --if-exists --no-owner -h db -U vialboard -d vialboard "/backups/$$BACKUP_FILE"'
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
