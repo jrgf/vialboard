@@ -1,6 +1,6 @@
 # Vialboard
 
-Vialboard is a  issue tracker app demonstrating the [go-vial](https://github.com/jrgf/go-vial) framework with GORM and PostgreSQL.
+Vialboard is a  issue tracker example app demonstrating the [go-vial](https://github.com/jrgf/go-vial) mvp framework with GORM and PostgreSQL.
 
 ## Architecture
 
