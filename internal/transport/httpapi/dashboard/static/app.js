@@ -103,10 +103,13 @@ elements["team-user-dialog"].addEventListener("click", (event) => {
   if (event.target === elements["team-user-dialog"]) closeTeamUserDialog();
 });
 
-window.addEventListener("authenticated", () => {
+function initializeDashboard() {
   startNotifications();
   showWorkspace("issues");
-});
+  if (state.session.user.role === "admin") loadUsers();
+}
+
+window.addEventListener("authenticated", initializeDashboard);
 window.addEventListener("session-expired", showAuth);
 window.addEventListener("members-changed", loadMembers);
 window.addEventListener("notification-navigation", async (event) => {
@@ -124,8 +127,7 @@ window.addEventListener("pagehide", stopNotifications);
 
 if (state.session) {
   showDashboard();
-  startNotifications();
-  showWorkspace("issues");
+  initializeDashboard();
 } else {
   showAuth();
 }

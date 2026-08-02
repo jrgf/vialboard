@@ -1,7 +1,7 @@
 .user-head,
 .user-row {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) 130px 120px 100px 72px;
+  grid-template-columns: minmax(220px, 1fr) 140px 110px 90px 120px;
   align-items: center;
   gap: 18px;
 }
@@ -55,7 +55,7 @@
   text-transform: uppercase;
 }
 
-.user-role-select { width: 112px; height: 35px; font-size: 11px; font-weight: 700; text-transform: capitalize; }
+.user-role-select { width: 132px; height: 35px; font-size: 11px; font-weight: 700; text-transform: capitalize; }
 
 .user-role-select:disabled { cursor: not-allowed; opacity: .7; }
 
@@ -79,7 +79,7 @@
 
 .user-created { color: var(--muted); font-size: 11px; }
 
-.user-reset-button { width: 68px; }
+.user-reset-button { width: 112px; min-width: 112px; }
 
 .empty-state { padding: 58px 20px; text-align: center; }
 
@@ -113,4 +113,3 @@
 .pagination > div { display: flex; gap: 8px; }
 
 .pagination .button { min-height: 35px; padding-inline: 13px; font-size: 11px; }
-
