@@ -1,0 +1,104 @@
+.nav-dot-teams { background: #d6a652; }
+
+.team-toolbar { align-items: end; }
+
+.team-picker-label {
+  display: grid;
+  min-width: 240px;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.team-picker-label select { width: 100%; }
+
+.team-controls { padding: 0 24px 24px; }
+
+.team-actions {
+  display: flex;
+  align-items: end;
+  padding: 20px 0;
+  gap: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.team-actions label {
+  display: grid;
+  min-width: 240px;
+  margin-right: auto;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.team-actions input { width: min(420px, 100%); }
+
+.team-member-list {
+  max-height: min(52vh, 560px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.team-member-head,
+.team-member-row {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) 150px 90px;
+  align-items: center;
+  column-gap: 18px;
+}
+
+.team-member-head {
+  padding: 16px 12px 10px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.team-member-row {
+  min-height: 76px;
+  padding: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.team-member-row .row-action.danger {
+  width: 76px;
+  justify-self: start;
+}
+
+.team-role {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.team-empty-copy {
+  margin: 24px 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 700px) {
+  .team-toolbar,
+  .team-actions { align-items: stretch; flex-direction: column; }
+
+  .team-picker-label,
+  .team-actions label { width: 100%; min-width: 0; }
+
+  .team-member-head { display: none; }
+
+  .team-member-row {
+    grid-template-columns: 1fr auto;
+    row-gap: 8px;
+  }
+
+  .team-role { grid-column: 1; }
+  .team-member-row .row-action.danger { grid-column: 2; grid-row: 1 / span 2; }
+}

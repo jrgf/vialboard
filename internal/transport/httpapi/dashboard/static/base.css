@@ -1,0 +1,113 @@
+:root {
+  color-scheme: light;
+  --ink: #18211d;
+  --muted: #68736d;
+  --paper: #f3f2ec;
+  --surface: #fffefa;
+  --line: #dde0d8;
+  --forest: #18392e;
+  --forest-soft: #285544;
+  --lime: #d8f36a;
+  --lime-deep: #b8db32;
+  --mint: #d9eee4;
+  --amber: #f6d68a;
+  --danger: #a33b36;
+  --shadow: 0 18px 45px rgba(31, 46, 39, .09);
+  --radius: 18px;
+  font-family: "Avenir Next", "Segoe UI", Arial, sans-serif;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+
+[hidden] { display: none !important; }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+button, input, select, textarea { font: inherit; }
+
+button, select { cursor: pointer; }
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(184, 219, 50, .55);
+  outline-offset: 2px;
+}
+
+a { color: inherit; }
+
+h1, h2, h3, p { margin-top: 0; }
+
+h1, h2, h3 {
+  letter-spacing: -.035em;
+  line-height: 1.05;
+}
+
+.noscript {
+  position: fixed;
+  z-index: 100;
+  inset: 0 0 auto;
+  margin: 0;
+  padding: 12px 20px;
+  text-align: center;
+  background: #fff1c7;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  color: var(--ink);
+  font-size: 19px;
+  font-weight: 750;
+  letter-spacing: -.03em;
+  text-decoration: none;
+}
+
+.brand-light { color: #f7f7ef; }
+
+.brand-mark {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 11px 11px 15px 15px;
+  color: var(--forest);
+  background: var(--lime);
+  box-shadow: inset 0 -3px 0 rgba(24, 57, 46, .12);
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.eyebrow,
+.auth-kicker {
+  margin-bottom: 10px;
+  color: var(--forest-soft);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.muted { color: var(--muted); }
+

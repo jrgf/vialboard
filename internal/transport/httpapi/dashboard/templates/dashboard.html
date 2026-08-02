@@ -1,0 +1,887 @@
+{{define "dashboard" -}}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="A focused issue board for small teams." />
+    <title>{{.Title}}</title>
+    <link rel="stylesheet" href="/dashboard/static/styles.css?v=8" />
+  <script type="module" src="/dashboard/static/app.js?v=13"></script>
+  </head>
+  <body>
+    <noscript
+      ><p class="noscript">
+        Vialboard needs JavaScript to connect this dashboard to the API.
+      </p></noscript
+    >
+
+    <main id="auth-view" class="auth-view">
+      <section class="auth-story" aria-labelledby="auth-story-title">
+        <a class="brand brand-light" href="/" aria-label="Vialboard home">
+          <span class="brand-mark" aria-hidden="true">V</span>
+          <span>vialboard</span>
+        </a>
+        <div class="auth-story-copy">
+          <p class="eyebrow">Issue tracking, distilled</p>
+          <h1 id="auth-story-title">
+            Keep the work visible.<br />Keep the team moving.
+          </h1>
+          <p>
+            One calm place to capture issues, decide what matters, and close the
+            loop.
+          </p>
+        </div>
+        <div class="auth-proof" aria-label="Vialboard benefits">
+          <span>Clear ownership</span>
+          <span>Focused status</span>
+          <span>Fast decisions</span>
+        </div>
+      </section>
+
+      <section class="auth-panel" aria-labelledby="auth-title">
+        <div class="auth-card">
+          <p class="auth-kicker">Welcome to Vialboard</p>
+          <h2 id="auth-title">Sign in to your workspace</h2>
+          <p id="auth-copy" class="muted">
+            Use your account to continue to the issue board.
+          </p>
+
+          <div class="auth-tabs" role="tablist" aria-label="Account action">
+            <button
+              id="login-tab"
+              class="auth-tab active"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              data-auth-mode="login"
+            >
+              Sign in
+            </button>
+            <button
+              id="register-tab"
+              class="auth-tab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              data-auth-mode="register"
+            >
+              Create account
+            </button>
+          </div>
+
+          <form id="auth-form" class="stack" autocomplete="on">
+            <label for="username">Username</label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              maxlength="16"
+              pattern="[A-Za-z0-9][A-Za-z0-9_-]{0,15}"
+              autocomplete="username"
+              placeholder="Username"
+              required
+            />
+
+            <div class="label-row">
+              <label for="password">Password</label>
+              <span>8–250 characters</span>
+            </div>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              minlength="8"
+              maxlength="250"
+              autocomplete="current-password"
+              placeholder="Enter your password"
+              required
+            />
+
+            <label id="password-confirmation-label" for="password-confirmation" hidden>Retype password</label>
+            <input
+              id="password-confirmation"
+              name="passwordConfirmation"
+              type="password"
+              minlength="8"
+              maxlength="250"
+              autocomplete="new-password"
+              placeholder="Retype your password"
+              hidden
+            />
+
+            <p id="auth-error" class="form-error" role="alert" hidden></p>
+            <button
+              id="auth-submit"
+              class="button button-primary button-block"
+              type="submit"
+            >
+              Sign in
+            </button>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <div id="app-view" class="app-view" hidden>
+      <aside class="sidebar">
+        <a class="brand brand-light" href="/" aria-label="Vialboard dashboard">
+          <span class="brand-mark" aria-hidden="true">V</span>
+          <span>vialboard</span>
+        </a>
+
+        <nav class="main-nav" aria-label="Main navigation">
+          <button
+            id="issues-nav"
+            class="nav-item active"
+            type="button"
+            aria-label="Issues"
+            aria-current="page"
+          >
+            <span class="nav-dot" aria-hidden="true"></span>
+            Issues
+            <span id="nav-count" class="nav-count">0</span>
+          </button>
+          <button
+            id="teams-nav"
+            class="nav-item"
+            type="button"
+            aria-label="Teams"
+            hidden
+          >
+            <span class="nav-dot nav-dot-teams" aria-hidden="true"></span>
+            Teams
+            <span id="team-nav-count" class="nav-count">0</span>
+          </button>
+          <button
+            id="notifications-nav"
+            class="nav-item"
+            type="button"
+            aria-label="Notifications"
+          >
+            <span
+              class="nav-dot nav-dot-notifications"
+              aria-hidden="true"
+            ></span>
+            Notifications
+            <span id="notification-nav-count" class="nav-count" hidden>0</span>
+          </button>
+          <button
+            id="users-nav"
+            class="nav-item"
+            type="button"
+            aria-label="Users"
+            hidden
+          >
+            <span class="nav-dot nav-dot-users" aria-hidden="true"></span>
+            Users
+            <span id="user-nav-count" class="nav-count">0</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-note">
+          <p class="sidebar-note-label">Workspace pulse</p>
+          <strong id="sidebar-pulse">Everything is clear</strong>
+          <p id="sidebar-pulse-copy">No open issues need attention.</p>
+        </div>
+
+        <div class="account-card">
+          <span id="user-avatar" class="avatar" aria-hidden="true">V</span>
+          <span class="account-copy">
+            <strong id="user-name">User</strong>
+            <small id="user-role">viewer</small>
+          </span>
+          <button
+            id="change-password-button"
+            class="icon-button"
+            type="button"
+            aria-label="Change password"
+            title="Change password"
+          >
+            ⌘
+          </button>
+          <button
+            id="logout-button"
+            class="icon-button"
+            type="button"
+            aria-label="Sign out"
+            title="Sign out"
+          >
+            ↗
+          </button>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <section id="notifications-workspace" hidden>
+          <header class="workspace-header">
+            <div>
+              <p class="eyebrow">Workspace / Notifications</p>
+              <h1>Notifications</h1>
+              <p class="muted">Updates from your issues and teams.</p>
+            </div>
+          </header>
+          <section
+            class="notification-card"
+            aria-labelledby="notification-heading"
+          >
+            <header class="notification-toolbar">
+              <h2 id="notification-heading">Inbox</h2>
+              <button
+                id="mark-all-notifications"
+                class="button button-quiet"
+                type="button"
+                disabled
+              >
+                Mark all read
+              </button>
+            </header>
+            <div id="notification-list" class="notification-list"></div>
+            <p id="notification-empty" class="notification-empty">
+              No notifications yet.
+            </p>
+          </section>
+        </section>
+        <section id="issues-workspace">
+          <header class="workspace-header">
+            <div>
+              <p class="eyebrow">Workspace / Issues</p>
+              <h1>Issue board</h1>
+              <p id="board-copy" class="muted">
+                Your work, ordered and visible.
+              </p>
+            </div>
+            <button
+              id="new-issue-button"
+              class="button button-primary"
+              type="button"
+            >
+              <span aria-hidden="true">＋</span> New issue
+            </button>
+          </header>
+
+          <section class="stats-grid" aria-label="Issue summary">
+            <article class="stat-card stat-total">
+              <span class="stat-label">Total issues</span>
+              <strong id="total-count">0</strong>
+              <span class="stat-foot">Across this workspace</span>
+            </article>
+            <article class="stat-card stat-open">
+              <span class="stat-label">Open</span>
+              <strong id="open-count">0</strong>
+              <span class="stat-foot"
+                ><i class="status-light"></i> Needs attention</span
+              >
+            </article>
+            <article class="stat-card stat-closed">
+              <span class="stat-label">Closed</span>
+              <strong id="closed-count">0</strong>
+              <span class="stat-foot">Completed work</span>
+            </article>
+          </section>
+
+          <section class="board-card" aria-labelledby="issues-heading">
+            <div class="board-toolbar">
+              <div>
+                <h2 id="issues-heading">Issues</h2>
+                <p id="result-copy" class="muted">Loading workspace…</p>
+              </div>
+              <div class="issue-filters">
+                <label class="search-control" for="search-input">
+                  <span class="visually-hidden">Search issues</span>
+                  <input
+                    id="search-input"
+                    type="search"
+                    maxlength="100"
+                    placeholder="Search issues…"
+                  />
+                </label>
+                <label class="filter-control" for="status-filter">
+                  <span class="visually-hidden">Status</span>
+                  <select id="status-filter">
+                    <option value="">All statuses</option>
+                    <option value="open">Open</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                </label>
+                <label class="filter-control" for="priority-filter">
+                  <span class="visually-hidden">Priority</span>
+                  <select id="priority-filter">
+                    <option value="">All priorities</option>
+                    <option value="critical">Critical</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </label>
+                <label class="filter-control" for="sort-filter">
+                  <span class="visually-hidden">Sort</span>
+                  <select id="sort-filter">
+                    <option value="createdAt:desc">Newest</option>
+                    <option value="updatedAt:desc">Recently updated</option>
+                    <option value="priority:desc">Highest priority</option>
+                    <option value="dueDate:asc">Due soon</option>
+                    <option value="title:asc">Title A–Z</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+
+            <div class="issue-head" aria-hidden="true">
+              <span>Issue</span>
+              <span>Priority</span>
+              <span>Status</span>
+              <span>Actions</span>
+            </div>
+            <div id="issue-list" class="issue-list" aria-live="polite"></div>
+
+            <div id="empty-state" class="empty-state" hidden>
+              <span class="empty-mark" aria-hidden="true">✓</span>
+              <h3>No issues here</h3>
+              <p>Change the filter or create the first issue for this view.</p>
+              <button
+                class="button button-secondary"
+                type="button"
+                data-create-issue
+              >
+                Create an issue
+              </button>
+            </div>
+
+            <footer class="pagination">
+              <p id="page-copy">Page 1 of 1</p>
+              <div>
+                <button
+                  id="previous-page"
+                  class="button button-quiet"
+                  type="button"
+                >
+                  Previous
+                </button>
+                <button
+                  id="next-page"
+                  class="button button-quiet"
+                  type="button"
+                >
+                  Next
+                </button>
+              </div>
+            </footer>
+          </section>
+        </section>
+
+        <section id="teams-workspace" hidden>
+          <header class="workspace-header">
+            <div>
+              <p class="eyebrow">Workspace / Teams</p>
+              <h1 id="team-workspace-title">Team management</h1>
+              <p id="team-workspace-copy" class="muted">
+                Create teams, assign workers, and manage team membership.
+              </p>
+            </div>
+            <button
+              id="new-team-button"
+              class="button button-primary"
+              type="button"
+            >
+              <span aria-hidden="true">＋</span> New team
+            </button>
+          </header>
+
+          <section
+            class="board-card teams-card"
+            aria-labelledby="teams-heading"
+          >
+            <div class="board-toolbar team-toolbar">
+              <div>
+                <h2 id="teams-heading">Teams</h2>
+                <p id="team-result-copy" class="muted">Loading teams…</p>
+              </div>
+              <label class="team-picker-label" for="team-picker">
+                <span>Selected team</span>
+                <select id="team-picker"></select>
+              </label>
+            </div>
+
+            <div id="team-empty" class="empty-state" hidden>
+              <span class="empty-mark" aria-hidden="true">＋</span>
+              <h3>No teams yet</h3>
+              <p>Create a team to start assigning workers and issues.</p>
+            </div>
+
+            <div id="team-controls" class="team-controls" hidden>
+              <div id="team-manager-actions" class="team-actions" hidden>
+                <label for="team-manager-search">
+                  <span>Team manager</span>
+                  <input
+                    id="team-manager-search"
+                    type="search"
+                    list="manager-options"
+                    autocomplete="off"
+                    placeholder="Search manager username"
+                  />
+                </label>
+                <button
+                  id="assign-team-manager-button"
+                  class="button button-secondary"
+                  type="button"
+                >
+                  Assign manager
+                </button>
+              </div>
+              <div id="team-worker-actions" class="team-actions">
+                <label for="available-user-search">
+                  <span>Add an existing worker</span>
+                  <input
+                    id="available-user-search"
+                    type="search"
+                    list="available-user-options"
+                    autocomplete="off"
+                    placeholder="Search worker username"
+                  />
+                  <datalist id="available-user-options"></datalist>
+                </label>
+                <button
+                  id="add-team-member-button"
+                  class="button button-secondary"
+                  type="button"
+                >
+                  Add worker
+                </button>
+                <button
+                  id="new-team-user-button"
+                  class="button button-primary"
+                  type="button"
+                >
+                  Create worker
+                </button>
+              </div>
+              <div class="team-member-head" aria-hidden="true">
+                <span>Member</span><span>Role</span
+                ><span id="team-member-actions-head">Actions</span>
+              </div>
+              <div
+                id="team-member-list"
+                class="team-member-list"
+                aria-live="polite"
+              ></div>
+            </div>
+          </section>
+        </section>
+
+        <section id="users-workspace" hidden>
+          <header class="workspace-header">
+            <div>
+              <p class="eyebrow">Workspace / Users</p>
+              <h1>User access</h1>
+              <p class="muted">Create accounts and control workspace access.</p>
+            </div>
+            <button
+              id="new-user-button"
+              class="button button-primary"
+              type="button"
+            >
+              <span aria-hidden="true">＋</span> New user
+            </button>
+          </header>
+
+          <section
+            class="board-card users-card"
+            aria-labelledby="users-heading"
+          >
+            <div class="board-toolbar">
+              <div>
+                <h2 id="users-heading">Users</h2>
+                <p id="user-result-copy" class="muted">Loading users…</p>
+              </div>
+            </div>
+
+            <div class="user-head" aria-hidden="true">
+              <span>Account</span>
+              <span>Role</span>
+              <span>Status</span>
+              <span>Created</span>
+              <span>Actions</span>
+            </div>
+            <div id="user-list" class="user-list" aria-live="polite"></div>
+
+            <footer class="pagination">
+              <p id="user-page-copy">Page 1 of 1</p>
+              <div>
+                <button
+                  id="previous-user-page"
+                  class="button button-quiet"
+                  type="button"
+                >
+                  Previous
+                </button>
+                <button
+                  id="next-user-page"
+                  class="button button-quiet"
+                  type="button"
+                >
+                  Next
+                </button>
+              </div>
+            </footer>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="issue-dialog" class="issue-dialog">
+      <div class="dialog-card">
+        <form id="issue-form" class="dialog-fields">
+          <header class="dialog-header">
+            <div>
+              <p id="dialog-kicker" class="eyebrow">New issue</p>
+              <h2 id="dialog-title">Capture the work</h2>
+            </div>
+            <button
+              id="close-dialog"
+              class="icon-button"
+              type="button"
+              aria-label="Close dialog"
+            >
+              ×
+            </button>
+          </header>
+
+          <label for="issue-title">Title</label>
+          <input
+            id="issue-title"
+            name="title"
+            type="text"
+            placeholder="What needs attention?"
+            required
+          />
+
+          <label for="issue-description"
+            >Description <span class="optional">Optional</span></label
+          >
+          <textarea
+            id="issue-description"
+            name="description"
+            rows="5"
+            placeholder="Add context, impact, or a next step."
+          ></textarea>
+
+          <label for="issue-status">Status</label>
+          <select id="issue-status" name="status">
+            <option value="open">Open</option>
+            <option value="closed">Closed</option>
+          </select>
+
+          <div class="dialog-grid">
+            <label for="issue-priority"
+              >Priority
+              <select id="issue-priority" name="priority">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </label>
+            <label for="issue-due-date"
+              >Due date <span class="optional">Optional</span>
+              <input id="issue-due-date" name="dueDate" type="date" />
+            </label>
+          </div>
+
+          <label for="issue-team"
+            >Team <span class="optional">Optional for admins</span></label
+          >
+          <select id="issue-team" name="teamId">
+            <option value="">No team</option>
+          </select>
+
+          <label for="issue-assignee"
+            >Assignee <span class="optional">Optional</span></label
+          >
+          <select id="issue-assignee" name="assigneeId">
+            <option value="">Unassigned</option>
+          </select>
+
+          <p id="issue-error" class="form-error" role="alert" hidden></p>
+          <footer class="dialog-actions">
+            <button
+              id="cancel-dialog"
+              class="button button-quiet"
+              type="button"
+            >
+              Cancel
+            </button>
+            <button id="save-issue" class="button button-primary" type="submit">
+              Create issue
+            </button>
+          </footer>
+        </form>
+
+        <section id="activity-panel" class="activity-panel" hidden>
+          <header>
+            <h3>Activity</h3>
+            <span>Latest 50</span>
+          </header>
+          <form id="comment-form" class="comment-form">
+            <label class="visually-hidden" for="comment-body"
+              >Add a comment</label
+            >
+            <textarea
+              id="comment-body"
+              maxlength="2000"
+              rows="2"
+              placeholder="Add a comment…"
+              required
+            ></textarea>
+            <button
+              id="save-comment"
+              class="button button-secondary"
+              type="submit"
+            >
+              Comment
+            </button>
+          </form>
+          <div
+            id="activity-list"
+            class="activity-list"
+            aria-live="polite"
+          ></div>
+        </section>
+      </div>
+    </dialog>
+
+    <dialog id="user-dialog" class="issue-dialog">
+      <form id="user-form" class="dialog-card">
+        <header class="dialog-header">
+          <div>
+            <p class="eyebrow">New user</p>
+            <h2>Create an account</h2>
+          </div>
+          <button
+            id="close-user-dialog"
+            class="icon-button"
+            type="button"
+            aria-label="Close dialog"
+          >
+            ×
+          </button>
+        </header>
+
+        <label for="new-username">Username</label>
+        <input
+          id="new-username"
+          name="username"
+          type="text"
+          maxlength="16"
+          pattern="[A-Za-z0-9][A-Za-z0-9_-]{0,15}"
+          autocomplete="off"
+          placeholder="team-member"
+          required
+        />
+
+        <label for="new-password">Temporary password</label>
+        <input
+          id="new-password"
+          name="password"
+          type="password"
+          minlength="8"
+          maxlength="250"
+          autocomplete="new-password"
+          placeholder="8–250 characters"
+          required
+        />
+
+        <label for="new-user-role">Role</label>
+        <select id="new-user-role" name="role">
+          <option value="viewer">Viewer / worker</option>
+          <option value="manager">Manager</option>
+          <option value="admin">Admin</option>
+        </select>
+
+        <p id="user-error" class="form-error" role="alert" hidden></p>
+        <footer class="dialog-actions">
+          <button
+            id="cancel-user-dialog"
+            class="button button-quiet"
+            type="button"
+          >
+            Cancel
+          </button>
+          <button id="save-user" class="button button-primary" type="submit">
+            Create user
+          </button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="team-dialog" class="issue-dialog password-dialog">
+      <form id="team-form" class="dialog-card">
+        <header class="dialog-header">
+          <div>
+            <p class="eyebrow">New team</p>
+            <h2>Create a team</h2>
+          </div>
+          <button
+            id="close-team-dialog"
+            class="icon-button"
+            type="button"
+            aria-label="Close dialog"
+          >
+            ×
+          </button>
+        </header>
+        <label for="team-name">Team name</label>
+        <input id="team-name" maxlength="64" placeholder="Platform" required />
+        <label id="team-manager-label" for="team-manager" hidden>Manager</label>
+        <input
+          id="team-manager"
+          type="search"
+          list="manager-options"
+          autocomplete="off"
+          placeholder="Search manager username"
+          hidden
+        />
+        <p id="team-error" class="form-error" role="alert" hidden></p>
+        <footer class="dialog-actions">
+          <button
+            id="cancel-team-dialog"
+            class="button button-quiet"
+            type="button"
+          >
+            Cancel
+          </button>
+          <button id="save-team" class="button button-primary" type="submit">
+            Create team
+          </button>
+        </footer>
+      </form>
+    </dialog>
+
+    <datalist id="manager-options"></datalist>
+
+    <dialog id="team-user-dialog" class="issue-dialog password-dialog">
+      <form id="team-user-form" class="dialog-card">
+        <header class="dialog-header">
+          <div>
+            <p class="eyebrow">New worker</p>
+            <h2>Create a team worker</h2>
+          </div>
+          <button
+            id="close-team-user-dialog"
+            class="icon-button"
+            type="button"
+            aria-label="Close dialog"
+          >
+            ×
+          </button>
+        </header>
+        <label for="team-username">Username</label>
+        <input
+          id="team-username"
+          maxlength="16"
+          pattern="[A-Za-z0-9][A-Za-z0-9_-]{0,15}"
+          autocomplete="off"
+          required
+        />
+        <label for="team-password">Temporary password</label>
+        <input
+          id="team-password"
+          type="password"
+          minlength="8"
+          maxlength="250"
+          autocomplete="new-password"
+          required
+        />
+        <p id="team-user-error" class="form-error" role="alert" hidden></p>
+        <footer class="dialog-actions">
+          <button
+            id="cancel-team-user-dialog"
+            class="button button-quiet"
+            type="button"
+          >
+            Cancel
+          </button>
+          <button
+            id="save-team-user"
+            class="button button-primary"
+            type="submit"
+          >
+            Create worker
+          </button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="password-dialog" class="issue-dialog password-dialog">
+      <form id="password-form" class="dialog-card">
+        <header class="dialog-header">
+          <div>
+            <p id="password-kicker" class="eyebrow">Account security</p>
+            <h2 id="password-title">Change password</h2>
+          </div>
+          <button
+            id="close-password-dialog"
+            class="icon-button"
+            type="button"
+            aria-label="Close dialog"
+          >
+            ×
+          </button>
+        </header>
+
+        <label id="current-password-label" for="current-password"
+          >Current password</label
+        >
+        <input
+          id="current-password"
+          type="password"
+          maxlength="250"
+          autocomplete="current-password"
+        />
+
+        <label for="replacement-password">New password</label>
+        <input
+          id="replacement-password"
+          type="password"
+          minlength="8"
+          maxlength="250"
+          autocomplete="new-password"
+          placeholder="8–250 characters"
+          required
+        />
+
+        <label for="replacement-password-confirmation">Retype new password</label>
+        <input
+          id="replacement-password-confirmation"
+          type="password"
+          minlength="8"
+          maxlength="250"
+          autocomplete="new-password"
+          placeholder="Retype the new password"
+          required
+        />
+
+        <p id="password-error" class="form-error" role="alert" hidden></p>
+        <footer class="dialog-actions">
+          <button
+            id="cancel-password-dialog"
+            class="button button-quiet"
+            type="button"
+          >
+            Cancel
+          </button>
+          <button
+            id="save-password"
+            class="button button-primary"
+            type="submit"
+          >
+            Change password
+          </button>
+        </footer>
+      </form>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>
+{{- end}}

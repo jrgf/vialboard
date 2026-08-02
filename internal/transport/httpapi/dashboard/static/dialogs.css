@@ -1,0 +1,74 @@
+.issue-dialog {
+  width: min(94vw, 680px);
+  padding: 0;
+  border: 0;
+  border-radius: 20px;
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow: 0 30px 90px rgba(19, 39, 31, .24);
+}
+
+.issue-dialog::backdrop { background: rgba(15, 30, 24, .62); backdrop-filter: blur(4px); }
+
+.dialog-card { display: grid; padding: 27px; gap: 9px; }
+
+.dialog-fields { display: grid; gap: 9px; }
+
+.dialog-header { display: flex; margin-bottom: 13px; align-items: flex-start; justify-content: space-between; }
+
+.dialog-header h2 { margin: 0; font-size: 25px; }
+
+.dialog-header .icon-button { color: var(--muted); }
+
+.dialog-fields > label:not(:first-of-type),
+.dialog-card > label:not(:first-of-type) { margin-top: 10px; }
+
+.dialog-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+
+.dialog-grid label { display: grid; gap: 9px; }
+
+.dialog-actions { display: flex; margin-top: 18px; justify-content: flex-end; gap: 9px; }
+
+.activity-panel { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
+
+.activity-panel > header { display: flex; align-items: center; justify-content: space-between; }
+
+.activity-panel h3 { margin: 0; font-size: 17px; }
+
+.activity-panel > header span { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+
+.comment-form { display: grid; margin: 14px 0; grid-template-columns: minmax(0, 1fr) auto; gap: 9px; align-items: end; }
+
+.comment-form textarea { min-height: 68px; }
+
+.activity-list { display: grid; max-height: 260px; overflow-y: auto; }
+
+.activity-item { display: grid; padding: 12px 0; grid-template-columns: auto minmax(0, 1fr); gap: 10px; border-top: 1px solid #eceee8; }
+
+.activity-mark { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 9px; color: var(--forest); background: var(--mint); font-size: 11px; font-weight: 850; }
+
+.activity-copy { min-width: 0; }
+
+.activity-copy p { margin-bottom: 4px; font-size: 12px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.activity-copy small { color: var(--muted); font-size: 10px; }
+
+.password-dialog { width: min(92vw, 500px); }
+
+.toast {
+  position: fixed;
+  z-index: 20;
+  right: 24px;
+  bottom: 24px;
+  max-width: min(380px, calc(100vw - 48px));
+  padding: 13px 17px;
+  border: 1px solid rgba(216, 243, 106, .35);
+  border-radius: 12px;
+  color: #f5f7f2;
+  background: var(--forest);
+  box-shadow: var(--shadow);
+  font-size: 12px;
+}
+
+.loading .issue-list { min-height: 180px; opacity: .45; pointer-events: none; }
+

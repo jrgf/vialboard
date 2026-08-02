@@ -1,0 +1,119 @@
+.app-view {
+  display: grid;
+  min-height: 100vh;
+  grid-template-columns: 250px minmax(0, 1fr);
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  height: 100vh;
+  padding: 30px 22px 22px;
+  flex-direction: column;
+  color: #eaf0eb;
+  background: var(--forest);
+}
+
+.main-nav { display: grid; margin-top: 52px; gap: 7px; }
+
+.nav-item {
+  display: grid;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 13px;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 11px;
+  border: 0;
+  border-radius: 11px;
+  color: #c2cec7;
+  background: transparent;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.nav-item.active { color: #fff; background: rgba(255, 255, 255, .09); }
+
+.nav-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lime); }
+
+.nav-dot-users { background: #9bc6ec; }
+.nav-dot-notifications { background: #f6d68a; }
+
+.nav-count {
+  min-width: 24px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: var(--forest);
+  background: var(--lime);
+  text-align: center;
+  font-size: 11px;
+}
+
+.sidebar-note {
+  margin-top: auto;
+  margin-bottom: 22px;
+  padding: 17px;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .045);
+}
+
+.sidebar-note-label {
+  margin-bottom: 10px;
+  color: var(--lime);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.sidebar-note strong { display: block; margin-bottom: 6px; font-size: 13px; }
+
+.sidebar-note p:last-child { margin: 0; color: #9fb0a7; font-size: 11px; line-height: 1.5; }
+
+.account-card {
+  display: grid;
+  padding-top: 18px;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid rgba(255, 255, 255, .1);
+}
+
+.avatar {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 11px;
+  color: var(--forest);
+  background: #e4e8dd;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.account-copy { min-width: 0; }
+
+.account-copy strong,
+.account-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.account-copy strong { font-size: 12px; }
+
+.account-copy small { margin-top: 2px; color: #9fb0a7; font-size: 10px; text-transform: capitalize; }
+
+.icon-button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  color: inherit;
+  background: transparent;
+  font-size: 18px;
+}
+
+.icon-button:hover { background: rgba(127, 139, 132, .13); }

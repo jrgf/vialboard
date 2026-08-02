@@ -1,0 +1,87 @@
+@media (max-width: 980px) {
+  .auth-view { grid-template-columns: 1fr; }
+  .auth-story { min-height: 330px; padding: 34px; }
+  .auth-story-copy { margin: 55px 0 36px; }
+  .auth-story h1 { font-size: clamp(40px, 9vw, 62px); }
+  .auth-panel { min-height: 620px; }
+  .app-view { grid-template-columns: 86px minmax(0, 1fr); }
+  .sidebar { padding-inline: 17px; align-items: center; }
+  .sidebar .brand > span:last-child,
+  .sidebar .nav-item > :not(.nav-dot),
+  .sidebar-note,
+  .account-copy { display: none; }
+  .main-nav { width: 100%; }
+  .nav-item { grid-template-columns: 1fr; place-items: center; padding: 0; }
+  .account-card { grid-template-columns: 1fr; }
+  .issue-head,
+  .issue-row { grid-template-columns: minmax(220px, 1fr) 80px 95px; }
+  .issue-head span:last-child,
+  .issue-actions { display: none; }
+  .issue-row:hover .issue-actions { display: flex; position: absolute; right: 25px; padding: 5px; border-radius: 10px; background: var(--surface); box-shadow: var(--shadow); }
+  .issue-row { position: relative; }
+  .user-head,
+  .user-row { grid-template-columns: minmax(190px, 1fr) 110px 100px 72px; }
+  .user-head span:nth-child(4),
+  .user-created { display: none; }
+}
+
+@media (max-width: 700px) {
+  .auth-story { min-height: 300px; }
+  .auth-proof { flex-wrap: wrap; gap: 9px 18px; }
+  .auth-panel { min-height: auto; padding: 54px 22px; }
+  .app-view { display: block; }
+  .sidebar {
+    position: static;
+    display: grid;
+    width: 100%;
+    height: auto;
+    padding: 14px 18px;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "brand account" "nav nav";
+    align-items: center;
+  }
+  .sidebar .brand { grid-area: brand; }
+  .sidebar .brand > span:last-child { display: inline; }
+  .main-nav { grid-area: nav; display: grid; width: 100%; margin-top: 12px; grid-template-columns: repeat(2, 1fr); }
+  .sidebar-note { display: none; }
+  .sidebar .nav-item { grid-template-columns: auto 1fr auto; place-items: center stretch; padding: 0 12px; }
+  .sidebar .nav-item > :not(.nav-dot) { display: inline; }
+  .account-card { grid-area: account; padding: 0; grid-template-columns: auto auto; border: 0; }
+  .avatar { width: 34px; height: 34px; }
+  .workspace { padding: 28px 16px 42px; }
+  .workspace-header { align-items: end; }
+  .workspace-header .eyebrow, .workspace-header .muted { display: none; }
+  .workspace-header h1 { margin: 0; font-size: 31px; }
+  .workspace-header .button { min-width: 43px; padding-inline: 11px; font-size: 0; }
+  .workspace-header .button span { font-size: 20px; }
+  .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .stat-card { min-height: 112px; padding: 15px; border-radius: 14px; }
+  .stat-card strong { margin-top: 11px; font-size: 29px; }
+  .stat-foot { display: none; }
+  .stat-label { font-size: 9px; }
+  .board-toolbar { min-height: 85px; padding: 16px; }
+  .filter-control { display: block; }
+  .filter-control > span { display: none; }
+  .filter-control select { width: 118px; }
+  .issue-filters { justify-content: flex-start; }
+  .search-control { width: 100%; }
+  .search-control input { width: 100%; }
+  .issue-head { display: none; }
+  .issue-row { min-height: 96px; padding: 16px; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; }
+  .issue-date { display: none; }
+  .issue-actions { display: flex; grid-column: 1 / -1; justify-content: flex-start; }
+  .issue-row:hover .issue-actions { position: static; padding: 0; box-shadow: none; }
+  .user-head { display: none; }
+  .user-row { padding: 16px; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; }
+  .user-row .user-state-button { grid-column: 2; }
+  .user-role-select { width: 100px; }
+  .user-reset-button { grid-column: 2; }
+  .dialog-grid { grid-template-columns: 1fr; }
+  .comment-form { grid-template-columns: 1fr; }
+  .pagination { padding-inline: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+}
+
