@@ -15,16 +15,16 @@ type teamsAPI struct {
 	users *application.UserService
 }
 
-func (api teamsAPI) register(app *vial.App, authenticated vial.Middleware) {
-	app.Get("/teams", authenticated(api.list))
-	app.Post("/teams", authenticated(api.create))
-	app.Patch("/teams/{id}", authenticated(api.update))
-	app.Get("/teams/availableManagers", authenticated(api.availableManagers))
-	app.Get("/teams/available-users", authenticated(api.availableUsers))
-	app.Get("/teams/{id}/members", authenticated(api.members))
-	app.Post("/teams/{id}/users", authenticated(api.createUser))
-	app.Put("/teams/{id}/members/{userId}", authenticated(api.addMember))
-	app.Delete("/teams/{id}/members/{userId}", authenticated(api.removeMember))
+func (api teamsAPI) register(group *vial.Group) {
+	group.Get("/teams", api.list)
+	group.Post("/teams", api.create)
+	group.Patch("/teams/{id}", api.update)
+	group.Get("/teams/availableManagers", api.availableManagers)
+	group.Get("/teams/available-users", api.availableUsers)
+	group.Get("/teams/{id}/members", api.members)
+	group.Post("/teams/{id}/users", api.createUser)
+	group.Put("/teams/{id}/members/{userId}", api.addMember)
+	group.Delete("/teams/{id}/members/{userId}", api.removeMember)
 }
 
 func (api teamsAPI) update(c *vial.Context) error {

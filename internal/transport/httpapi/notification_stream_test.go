@@ -35,7 +35,7 @@ func TestNotificationStreamCanDisableWriteTimeout(t *testing.T) {
 		t.Fatal(err)
 	}
 	body, err := io.ReadAll(response.Body)
-	response.Body.Close()
+	_ = response.Body.Close()
 	if err != nil {
 		t.Fatal(err)
 	}

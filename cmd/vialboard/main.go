@@ -7,8 +7,10 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
+	vial "github.com/jrgf/go-vial"
 	"github.com/jrgf/vialboard/internal/application"
 	passwordhash "github.com/jrgf/vialboard/internal/infrastructure/password"
 	postgresstore "github.com/jrgf/vialboard/internal/infrastructure/postgres"
@@ -31,7 +33,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer sqlDB.Close()
+	defer func() { _ = sqlDB.Close() }()
 
 	ctx := context.Background()
 	userRepository := postgresstore.NewUserRepository(db)
@@ -89,10 +91,12 @@ func main() {
 		return
 	}
 
-	if err := postgresstore.MigrateUp(ctx, sqlDB); err != nil {
-		log.Fatal(err)
+	if autoMigrate() {
+		if err := postgresstore.MigrateUp(ctx, sqlDB); err != nil {
+			log.Fatal(err)
+		}
 	}
-	app := httpapi.New(issues, users, teams, notifications, sqlDB)
+	app := httpapi.New(issues, users, teams, notifications, sqlDB, vial.WithTrustedProxies(trustedProxies()...))
 	if err := app.Run(ctx, httpAddress()); err != nil {
 		log.Fatal(err)
 	}
@@ -108,8 +112,8 @@ func healthcheck() error {
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
-	if response.StatusCode != http.StatusOK {
+	defer func() { _ = response.Body.Close() }()
+	if response.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("readiness status %d", response.StatusCode)
 	}
 	return nil
@@ -125,4 +129,18 @@ func httpAddress() string {
 		port = "8080"
 	}
 	return net.JoinHostPort(host, port)
+}
+
+func autoMigrate() bool {
+	return strings.EqualFold(strings.TrimSpace(os.Getenv("VIAL_AUTO_MIGRATE")), "true")
+}
+
+func trustedProxies() []string {
+	var proxies []string
+	for _, value := range strings.Split(os.Getenv("VIAL_TRUSTED_PROXIES"), ",") {
+		if value = strings.TrimSpace(value); value != "" {
+			proxies = append(proxies, value)
+		}
+	}
+	return proxies
 }

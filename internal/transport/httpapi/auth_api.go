@@ -14,9 +14,9 @@ type authAPI struct {
 	users *application.UserService
 }
 
-func (api authAPI) register(app *vial.App, authenticated, limited vial.Middleware) {
-	app.Post("/login", limited(api.login))
-	app.Post("/logout", authenticated(api.logout))
+func (api authAPI) register(public, protected *vial.Group, limited vial.Middleware) {
+	public.Post("/login", limited(api.login))
+	protected.Post("/logout", api.logout)
 }
 
 func (api authAPI) login(c *vial.Context) error {

@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"net"
 	"net/http"
 	"strconv"
 	"sync"
@@ -15,6 +14,7 @@ type requestLimiter struct {
 	entries map[string]limitEntry
 	limit   int
 	window  time.Duration
+	maxSize int
 	now     func() time.Time
 }
 
@@ -24,23 +24,32 @@ type limitEntry struct {
 }
 
 func newRequestLimiter(limit int, window time.Duration) *requestLimiter {
-	return &requestLimiter{entries: make(map[string]limitEntry), limit: limit, window: window, now: time.Now}
+	return &requestLimiter{entries: make(map[string]limitEntry), limit: limit, window: window, maxSize: 10_000, now: time.Now}
 }
 
 func (limiter *requestLimiter) middleware(next vial.Handler) vial.Handler {
 	return func(context *vial.Context) error {
 		now := limiter.now()
-		key := clientIP(context.Request().RemoteAddr) + " " + context.Request().URL.Path
+		address, err := context.ClientIP()
+		if err != nil {
+			return vial.NewHTTPError(http.StatusBadRequest, "invalidClientIP", "Invalid client address")
+		}
+		key := address.String() + " " + context.Request().URL.Path
 
 		limiter.mu.Lock()
-		// ponytail: one in-process window is enough for one API replica; move counters to Redis before horizontal scaling.
-		for currentKey, entry := range limiter.entries {
-			if !now.Before(entry.reset) {
-				delete(limiter.entries, currentKey)
-			}
-		}
 		entry := limiter.entries[key]
+		if !entry.reset.IsZero() && !now.Before(entry.reset) {
+			delete(limiter.entries, key)
+			entry = limitEntry{}
+		}
 		if entry.reset.IsZero() {
+			if len(limiter.entries) >= limiter.maxSize {
+				// ponytail: arbitrary eviction keeps one-process memory bounded; use a shared limiter before horizontal scaling.
+				for currentKey := range limiter.entries {
+					delete(limiter.entries, currentKey)
+					break
+				}
+			}
 			entry.reset = now.Add(limiter.window)
 		}
 		limited := entry.count >= limiter.limit
@@ -57,12 +66,4 @@ func (limiter *requestLimiter) middleware(next vial.Handler) vial.Handler {
 		}
 		return next(context)
 	}
-}
-
-func clientIP(remoteAddress string) string {
-	host, _, err := net.SplitHostPort(remoteAddress)
-	if err == nil {
-		return host
-	}
-	return remoteAddress
 }

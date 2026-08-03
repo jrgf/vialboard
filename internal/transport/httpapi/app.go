@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"database/sql"
 	"time"
 
@@ -10,25 +11,50 @@ import (
 	"github.com/jrgf/vialboard/internal/domain"
 )
 
-func New(issues *application.IssueService, users *application.UserService, teams *application.TeamService, notifications *application.NotificationService, database *sql.DB) *vial.App {
-	app := vial.New(vial.WithDisallowUnknownJSONFields(true))
-	app.Use(
+func New(issues *application.IssueService, users *application.UserService, teams *application.TeamService, notifications *application.NotificationService, database *sql.DB, options ...vial.Option) *vial.App {
+	options = append([]vial.Option{vial.WithDisallowUnknownJSONFields(true)}, options...)
+	app := vial.New(options...)
+	if err := app.Register(apiModule{issues: issues, users: users, teams: teams, notifications: notifications, database: database}); err != nil {
+		panic(err)
+	}
+	return app
+}
+
+type apiModule struct {
+	issues        *application.IssueService
+	users         *application.UserService
+	teams         *application.TeamService
+	notifications *application.NotificationService
+	database      *sql.DB
+}
+
+func (apiModule) Name() string { return "api" }
+
+func (module apiModule) Register(registrar *vial.Registrar) error {
+	registrar.Use(
 		middleware.RequestID(),
 		middleware.Logger(),
 		middleware.Recover(),
 	)
 
-	authenticated := authenticate(users)
+	authenticated := authenticate(module.users)
 	limited := newRequestLimiter(10, time.Minute).middleware
 	// ponytail: live fan-out is per process; replace the hub with Redis pub/sub before running multiple replicas.
 	notificationHub := newNotificationHub()
-	dashboardAPI{views: dashboardViews}.register(app)
-	healthAPI{database: database}.register(app)
-	authAPI{users: users}.register(app, authenticated, limited)
-	usersAPI{users: users}.register(app, authenticated, requireRole(domain.RoleAdmin), limited)
-	teamsAPI{teams: teams, users: users}.register(app, authenticated)
-	issuesAPI{issues: issues}.register(app, authenticated)
-	notificationsAPI{notifications: notifications, users: users, hub: notificationHub}.register(app, authenticated)
-	app.Go("notifications", notificationBroadcaster(notifications, notificationHub))
-	return app
+	public := registrar.Group("")
+	protected := registrar.Group("")
+	protected.Use(authenticated)
+	admin := protected.Group("")
+	admin.Use(requireRole(domain.RoleAdmin))
+
+	dashboardAPI{views: dashboardViews}.register(public)
+	registrar.Health("/health/live")
+	registrar.Readiness("/health/ready", func(ctx context.Context) error { return module.database.PingContext(ctx) })
+	authAPI{users: module.users}.register(public, protected, limited)
+	usersAPI{users: module.users}.register(public, protected, admin, limited)
+	teamsAPI{teams: module.teams, users: module.users}.register(protected)
+	issuesAPI{issues: module.issues}.register(protected)
+	notificationsAPI{notifications: module.notifications, users: module.users, hub: notificationHub}.register(protected)
+	registrar.Go("notifications", notificationBroadcaster(module.notifications, notificationHub))
+	return nil
 }

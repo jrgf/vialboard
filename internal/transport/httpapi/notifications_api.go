@@ -21,11 +21,11 @@ type notificationsAPI struct {
 	hub           *notificationHub
 }
 
-func (api notificationsAPI) register(app *vial.App, authenticated vial.Middleware) {
-	app.Get("/notifications", authenticated(api.list))
-	app.Get("/notifications/stream", authenticated(api.stream))
-	app.Patch("/notifications/{id}/read", authenticated(api.markRead))
-	app.Post("/notifications/readAll", authenticated(api.markAllRead))
+func (api notificationsAPI) register(group *vial.Group) {
+	group.Get("/notifications", api.list)
+	group.Get("/notifications/stream", api.stream)
+	group.Patch("/notifications/{id}/read", api.markRead)
+	group.Post("/notifications/readAll", api.markAllRead)
 }
 
 func (api notificationsAPI) list(c *vial.Context) error {

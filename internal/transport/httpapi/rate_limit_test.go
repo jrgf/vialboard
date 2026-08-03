@@ -42,3 +42,29 @@ func TestRequestLimiter(t *testing.T) {
 		t.Fatalf("reset status = %d", status)
 	}
 }
+
+func TestRequestLimiterUsesTrustedClientIPAndBoundsMemory(t *testing.T) {
+	limiter := newRequestLimiter(1, time.Minute)
+	limiter.maxSize = 2
+	app := vial.New(vial.WithTrustedProxies("10.0.0.0/8"))
+	app.Post("/login", limiter.middleware(func(context *vial.Context) error {
+		return context.NoContent(http.StatusNoContent)
+	}))
+
+	request := func(forwarded string) int {
+		response := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodPost, "/login", nil)
+		req.RemoteAddr = "10.0.0.1:1234"
+		req.Header.Set("X-Forwarded-For", forwarded)
+		app.ServeHTTP(response, req)
+		return response.Code
+	}
+	for _, forwarded := range []string{"192.0.2.1", "192.0.2.2", "192.0.2.3"} {
+		if status := request(forwarded); status != http.StatusNoContent {
+			t.Fatalf("%s status = %d", forwarded, status)
+		}
+	}
+	if len(limiter.entries) != limiter.maxSize {
+		t.Fatalf("entries = %d, max = %d", len(limiter.entries), limiter.maxSize)
+	}
+}

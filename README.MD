@@ -109,7 +109,9 @@ The Compose credentials are for local development only.
 
 ## Migrations
 
-Migrations are embedded in the application and applied automatically at startup.
+Migrations are embedded in the application. Production deployments apply them
+explicitly before startup; the development Compose file sets
+`VIAL_AUTO_MIGRATE=true` for convenience.
 
 ```sh
 docker compose run --rm api migrate up
@@ -117,9 +119,12 @@ docker compose run --rm api migrate down
 ```
 
 `migrate down` rolls back the latest migration and may delete data.
+Normal startup does not migrate unless `VIAL_AUTO_MIGRATE=true`.
 
 Create schema changes as numbered SQL files in `internal/infrastructure/postgres/migrations/`.
 
 ## Operations
 
-Production Compose, backups, restore instructions, health checks, and initial service objectives are documented in [`docs/operations.md`](docs/operations.md). Copy `.env.example` to `.env` and replace every placeholder before using `compose.prod.yaml`.
+Production Compose binds the API to host loopback for a TLS reverse proxy. Copy
+`.env.example` to `.env`, replace every placeholder, back up PostgreSQL, and run
+`vialboard migrate up` before starting a new production image.

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"os"
 	"strconv"
@@ -16,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jrgf/go-vial/testkit"
 	"github.com/jrgf/vialboard/internal/application"
 	"github.com/jrgf/vialboard/internal/domain"
 	passwordhash "github.com/jrgf/vialboard/internal/infrastructure/password"
@@ -72,7 +72,7 @@ func TestIssueLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { adminSQL.Close() })
+	t.Cleanup(func() { _ = adminSQL.Close() })
 
 	schema := "vialboard_test_" + strconv.FormatInt(time.Now().UnixNano(), 10)
 	if err := adminDB.Exec(fmt.Sprintf(`CREATE SCHEMA "%s"`, schema)).Error; err != nil {
@@ -91,7 +91,7 @@ func TestIssueLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { sqlDB.Close() })
+	t.Cleanup(func() { _ = sqlDB.Close() })
 
 	ctx := context.Background()
 	if err := postgresstore.MigrateUp(ctx, sqlDB); err != nil {
@@ -280,15 +280,14 @@ func TestIssueLifecycle(t *testing.T) {
 	teams := application.NewTeamService(teamRepository, userRepository, notifications)
 	issues := application.NewIssueService(postgresstore.NewIssueRepository(db), userRepository, teams, notifications)
 	app := httpapi.New(issues, users, teams, notifications, sqlDB)
-	server := httptest.NewServer(app)
-	t.Cleanup(server.Close)
+	server := testkit.Start(t, app)
 	for _, path := range []string{"/health/live", "/health/ready"} {
 		response, err := http.Get(server.URL + path)
 		if err != nil {
 			t.Fatal(err)
 		}
-		response.Body.Close()
-		if response.StatusCode != http.StatusOK {
+		_ = response.Body.Close()
+		if response.StatusCode != http.StatusNoContent {
 			t.Fatalf("%s status = %d", path, response.StatusCode)
 		}
 	}
@@ -298,7 +297,7 @@ func TestIssueLifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 	dashboardBody, err := io.ReadAll(dashboardResponse.Body)
-	dashboardResponse.Body.Close()
+	_ = dashboardResponse.Body.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -311,7 +310,7 @@ func TestIssueLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	dashboardScript.Body.Close()
+	_ = dashboardScript.Body.Close()
 	if dashboardScript.StatusCode != http.StatusOK || !strings.Contains(dashboardScript.Header.Get("Content-Type"), "javascript") {
 		t.Fatalf("dashboard script status = %d, content type = %q", dashboardScript.StatusCode, dashboardScript.Header.Get("Content-Type"))
 	}
@@ -451,7 +450,7 @@ func TestIssueLifecycle(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		response.Body.Close()
+		_ = response.Body.Close()
 		if response.StatusCode != http.StatusUnauthorized || response.Header.Get("WWW-Authenticate") != "Bearer" {
 			t.Fatalf("authorization %q status = %d, challenge = %q", header, response.StatusCode, response.Header.Get("WWW-Authenticate"))
 		}
@@ -973,10 +972,10 @@ func TestIssueLifecycle(t *testing.T) {
 	}
 	var listed issueListResponse
 	if err := json.NewDecoder(response.Body).Decode(&listed); err != nil {
-		response.Body.Close()
+		_ = response.Body.Close()
 		t.Fatal(err)
 	}
-	response.Body.Close()
+	_ = response.Body.Close()
 	if len(listed.Items) != 1 || listed.Items[0].ID != issue.ID {
 		t.Fatalf("unexpected issue list: %+v", listed.Items)
 	}
@@ -1140,7 +1139,7 @@ func requestJSONWithToken(t *testing.T, url, method string, payload any, token s
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		t.Fatal(err)

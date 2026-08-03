@@ -3,6 +3,7 @@ services:
     build: .
     environment:
       DATABASE_URL: postgres://vialboard:vialboard@db:5432/vialboard?sslmode=disable
+      VIAL_AUTO_MIGRATE: "true"
       VIAL_HTTP_HOST: 0.0.0.0
       VIAL_HTTP_PORT: 8080
       VIAL_SEED_OWNER_USERNAME: vialboard

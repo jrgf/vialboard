@@ -16,14 +16,14 @@ type issuesAPI struct {
 	issues *application.IssueService
 }
 
-func (api issuesAPI) register(app *vial.App, authenticated vial.Middleware) {
-	app.Get("/issues", authenticated(api.list))
-	app.Post("/issues", authenticated(api.create))
-	app.Get("/issues/{id}", authenticated(api.get))
-	app.Patch("/issues/{id}", authenticated(api.update))
-	app.Delete("/issues/{id}", authenticated(api.delete))
-	app.Get("/issues/{id}/activity", authenticated(api.listActivity))
-	app.Post("/issues/{id}/comments", authenticated(api.addComment))
+func (api issuesAPI) register(group *vial.Group) {
+	group.Get("/issues", api.list)
+	group.Post("/issues", api.create)
+	group.Get("/issues/{id}", api.get)
+	group.Patch("/issues/{id}", api.update)
+	group.Delete("/issues/{id}", api.delete)
+	group.Get("/issues/{id}/activity", api.listActivity)
+	group.Post("/issues/{id}/comments", api.addComment)
 }
 
 func (api issuesAPI) list(c *vial.Context) error {

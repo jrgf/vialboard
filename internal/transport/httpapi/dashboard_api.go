@@ -26,11 +26,11 @@ type dashboardPage struct {
 	Title string
 }
 
-func (api dashboardAPI) register(app *vial.App) {
-	app.Get("/", api.index, vial.RouteName("dashboard"))
+func (api dashboardAPI) register(group *vial.Group) {
+	group.Get("/", api.index, vial.RouteName("dashboard"))
 
 	assets := http.StripPrefix("/dashboard/static/", http.FileServerFS(dashboardAssets))
-	app.HandleHTTP("GET /dashboard/static/", http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+	group.HandleHTTP("GET /dashboard/static/", http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Cache-Control", "no-cache")
 		writer.Header().Set("X-Content-Type-Options", "nosniff")
 		assets.ServeHTTP(writer, request)

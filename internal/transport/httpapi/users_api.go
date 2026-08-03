@@ -14,14 +14,14 @@ type usersAPI struct {
 	users *application.UserService
 }
 
-func (api usersAPI) register(app *vial.App, authenticated, admin, limited vial.Middleware) {
-	app.Post("/register", limited(api.createViewer))
-	app.Get("/members", authenticated(api.members))
-	app.Patch("/account/password", authenticated(api.changePassword))
-	app.Post("/users", authenticated(admin(api.create)))
-	app.Get("/users", authenticated(admin(api.list)))
-	app.Patch("/users/{id}", authenticated(admin(api.updateAccess)))
-	app.Patch("/users/{id}/password", authenticated(admin(api.resetPassword)))
+func (api usersAPI) register(public, protected, admin *vial.Group, limited vial.Middleware) {
+	public.Post("/register", limited(api.createViewer))
+	protected.Get("/members", api.members)
+	protected.Patch("/account/password", api.changePassword)
+	admin.Post("/users", api.create)
+	admin.Get("/users", api.list)
+	admin.Patch("/users/{id}", api.updateAccess)
+	admin.Patch("/users/{id}/password", api.resetPassword)
 }
 
 func (api usersAPI) changePassword(c *vial.Context) error {
