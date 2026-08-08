@@ -154,6 +154,10 @@ func (s *UserService) GetByUsername(ctx context.Context, username string) (domai
 	return user, err
 }
 
+func (s *UserService) GetByID(ctx context.Context, id string) (domain.User, error) {
+	return s.users.FindByID(ctx, id)
+}
+
 func (s *UserService) List(ctx context.Context, page, pageSize int) (UserPage, error) {
 	if page == 0 {
 		page = 1

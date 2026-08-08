@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/jackc/pgx/v5 v5.10.0
-	github.com/jrgf/go-vial v0.15.0
+	github.com/jrgf/go-vial v0.16.0
 	github.com/pressly/goose/v3 v3.27.3
 	golang.org/x/crypto v0.54.0
 	gorm.io/driver/postgres v1.6.2

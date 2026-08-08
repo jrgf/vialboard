@@ -3,6 +3,7 @@ package httpapi_test
 import (
 	"bytes"
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -55,6 +57,20 @@ type loginResponse struct {
 		Role     domain.Role `json:"role"`
 		TeamID   *string     `json:"teamId"`
 	} `json:"user"`
+}
+
+type operationResponse struct {
+	ID          string `json:"id"`
+	Status      string `json:"status"`
+	StatusURL   string `json:"status_url"`
+	Progress    int    `json:"progress"`
+	Attempt     int    `json:"attempt"`
+	MaxAttempts int    `json:"max_attempts"`
+	Result      *struct {
+		DownloadURL string `json:"download_url"`
+		Filename    string `json:"filename"`
+		Rows        int    `json:"rows"`
+	} `json:"result"`
 }
 
 const (
@@ -131,12 +147,21 @@ func TestIssueLifecycle(t *testing.T) {
 	if !db.Migrator().HasTable("notifications") || !db.Migrator().HasIndex("notifications", "notifications_unread_idx") {
 		t.Fatal("notification schema was not created")
 	}
+	if !db.Migrator().HasTable("issue_exports") {
+		t.Fatal("issue export schema was not created")
+	}
 	var managerTriggerCount int64
 	if err := db.Raw("SELECT COUNT(*) FROM pg_trigger AS trigger JOIN pg_class AS relation ON relation.oid = trigger.tgrelid JOIN pg_namespace AS namespace ON namespace.oid = relation.relnamespace WHERE namespace.nspname = current_schema() AND trigger.tgname IN ('teams_require_active_manager', 'users_preserve_managed_team_manager') AND NOT trigger.tgisinternal").Scan(&managerTriggerCount).Error; err != nil {
 		t.Fatal(err)
 	}
 	if managerTriggerCount != 2 {
 		t.Fatalf("manager constraint triggers = %d, want 2", managerTriggerCount)
+	}
+	if err := postgresstore.MigrateDown(ctx, sqlDB); err != nil {
+		t.Fatal(err)
+	}
+	if db.Migrator().HasTable("issue_exports") {
+		t.Fatal("issue export table still exists after rollback")
 	}
 	if err := postgresstore.MigrateDown(ctx, sqlDB); err != nil {
 		t.Fatal(err)
@@ -982,6 +1007,20 @@ func TestIssueLifecycle(t *testing.T) {
 	if listed.Pagination.Page != 1 || listed.Pagination.PageSize != 20 || listed.Pagination.Total != 1 {
 		t.Fatalf("unexpected pagination: %+v", listed.Pagination)
 	}
+	operationID := testIssueExport(t, server.URL, login.Token, registered.Token, issue)
+	for _, table := range []string{"vial_async_operations", "issue_exports"} {
+		var count int64
+		column := "operation_id"
+		if table == "vial_async_operations" {
+			column = "id"
+		}
+		if err := db.Table(table).Where(column+" = ?", operationID).Count(&count).Error; err != nil {
+			t.Fatal(err)
+		}
+		if count != 1 {
+			t.Fatalf("%s operation rows = %d, want 1", table, count)
+		}
+	}
 
 	issueURL := server.URL + "/issues/" + strconv.FormatUint(issue.ID, 10)
 	status, body = requestJSONWithToken(t, issueURL, http.MethodPatch, map[string]string{"status": string(domain.StatusClosed)}, login.Token)
@@ -1108,6 +1147,107 @@ func TestIssueLifecycle(t *testing.T) {
 	if revokedAt == nil {
 		t.Fatal("logout did not revoke the session")
 	}
+}
+
+func testIssueExport(t *testing.T, serverURL, token, otherToken string, issue issueResponse) string {
+	t.Helper()
+	submit := func() operationResponse {
+		req, err := http.NewRequest(http.MethodPost, serverURL+"/exports/issues", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Idempotency-Key", "issue-export-integration")
+		req.Header.Set("Prefer", "respond-async")
+		response, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() { _ = response.Body.Close() }()
+		if response.StatusCode != http.StatusAccepted || response.Header.Get("Location") == "" {
+			body, _ := io.ReadAll(response.Body)
+			t.Fatalf("export submission status = %d, body = %s", response.StatusCode, body)
+		}
+		var operation operationResponse
+		if err := json.NewDecoder(response.Body).Decode(&operation); err != nil {
+			t.Fatal(err)
+		}
+		return operation
+	}
+
+	operation := submit()
+	duplicate := submit()
+	if operation.ID == "" || operation.StatusURL == "" || duplicate.ID != operation.ID {
+		t.Fatalf("idempotent export operations = %+v, %+v", operation, duplicate)
+	}
+	statusURL := serverURL + operation.StatusURL
+	if status, _ := requestJSON(t, statusURL, http.MethodGet, nil); status != http.StatusUnauthorized {
+		t.Fatalf("unauthenticated operation status = %d", status)
+	}
+	if status, _ := requestJSONWithToken(t, statusURL, http.MethodGet, nil, otherToken); status != http.StatusNotFound {
+		t.Fatalf("other owner operation status = %d", status)
+	}
+
+	eventRequest, err := http.NewRequest(http.MethodGet, statusURL+"/events", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	eventRequest.Header.Set("Authorization", "Bearer "+token)
+	eventResponse, err := http.DefaultClient.Do(eventRequest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if eventResponse.StatusCode != http.StatusOK || !strings.Contains(eventResponse.Header.Get("Content-Type"), "text/event-stream") {
+		_ = eventResponse.Body.Close()
+		t.Fatalf("operation events status = %d, type = %q", eventResponse.StatusCode, eventResponse.Header.Get("Content-Type"))
+	}
+	events := make(chan []byte, 1)
+	go func() {
+		body, _ := io.ReadAll(eventResponse.Body)
+		_ = eventResponse.Body.Close()
+		events <- body
+	}()
+
+	deadline := time.Now().Add(5 * time.Second)
+	for !slices.Contains([]string{"succeeded", "failed", "cancelled"}, operation.Status) && time.Now().Before(deadline) {
+		status, body := requestJSONWithToken(t, statusURL, http.MethodGet, nil, token)
+		if status != http.StatusOK {
+			t.Fatalf("operation poll status = %d, body = %s", status, body)
+		}
+		if err := json.Unmarshal(body, &operation); err != nil {
+			t.Fatal(err)
+		}
+		if !slices.Contains([]string{"succeeded", "failed", "cancelled"}, operation.Status) {
+			time.Sleep(20 * time.Millisecond)
+		}
+	}
+	if operation.Status != "succeeded" || operation.Progress != 100 || operation.MaxAttempts != 3 || operation.Result == nil || operation.Result.Rows < 1 {
+		t.Fatalf("completed export operation = %+v", operation)
+	}
+	select {
+	case body := <-events:
+		if !bytes.Contains(body, []byte("event: completion")) || !bytes.Contains(body, []byte(operation.ID)) {
+			t.Fatalf("unexpected operation events: %s", body)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("operation completion event timed out")
+	}
+
+	status, body := requestJSONWithToken(t, serverURL+operation.Result.DownloadURL, http.MethodGet, nil, token)
+	if status != http.StatusOK {
+		t.Fatalf("export download status = %d, body = %s", status, body)
+	}
+	rows, err := csv.NewReader(bytes.NewReader(body)).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) < 2 || rows[0][0] != "id" || rows[1][0] != strconv.FormatUint(issue.ID, 10) || rows[1][1] != issue.Title {
+		t.Fatalf("unexpected export CSV: %#v", rows)
+	}
+	if status, _ := requestJSONWithToken(t, statusURL, http.MethodDelete, nil, token); status != http.StatusNoContent {
+		t.Fatalf("completed operation cancellation status = %d", status)
+	}
+	return operation.ID
 }
 
 func requestJSON(t *testing.T, url, method string, payload any) (int, []byte) {

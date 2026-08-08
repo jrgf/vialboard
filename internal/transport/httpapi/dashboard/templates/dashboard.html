@@ -251,14 +251,28 @@
                 Your work, ordered and visible.
               </p>
             </div>
-            <button
-              id="new-issue-button"
-              class="button button-primary"
-              type="button"
-            >
-              <span aria-hidden="true">＋</span> New issue
-            </button>
+            <div class="workspace-actions">
+              <button id="export-issues-button" class="button button-secondary" type="button">
+                Export CSV
+              </button>
+              <button
+                id="new-issue-button"
+                class="button button-primary"
+                type="button"
+              >
+                <span aria-hidden="true">＋</span> New issue
+              </button>
+            </div>
           </header>
+
+          <section id="export-status" class="export-status" aria-live="polite" hidden>
+            <div>
+              <strong>Preparing issue export</strong>
+              <p id="export-copy" class="muted">Submitting…</p>
+            </div>
+            <button id="cancel-export-button" class="button button-secondary" type="button">Cancel</button>
+            <progress id="export-progress" max="100" value="0">0%</progress>
+          </section>
 
           <section class="stats-grid" aria-label="Issue summary">
             <article class="stat-card stat-total">

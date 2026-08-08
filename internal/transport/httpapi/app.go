@@ -6,6 +6,7 @@ import (
 	"time"
 
 	vial "github.com/jrgf/go-vial"
+	"github.com/jrgf/go-vial/contrib/asyncpostgres"
 	"github.com/jrgf/go-vial/middleware"
 	"github.com/jrgf/vialboard/internal/application"
 	"github.com/jrgf/vialboard/internal/domain"
@@ -14,7 +15,11 @@ import (
 func New(issues *application.IssueService, users *application.UserService, teams *application.TeamService, notifications *application.NotificationService, database *sql.DB, options ...vial.Option) *vial.App {
 	options = append([]vial.Option{vial.WithDisallowUnknownJSONFields(true)}, options...)
 	app := vial.New(options...)
-	if err := app.Register(apiModule{issues: issues, users: users, teams: teams, notifications: notifications, database: database}); err != nil {
+	executor := asyncpostgres.New(database)
+	exports := issueExportAPI{issues: issues, users: users, database: database, executor: executor}
+	executor.Handle(issueExportOperation, exports.generate)
+	app.Async(executor)
+	if err := app.Register(apiModule{issues: issues, users: users, teams: teams, notifications: notifications, database: database, exports: exports}); err != nil {
 		panic(err)
 	}
 	return app
@@ -26,6 +31,7 @@ type apiModule struct {
 	teams         *application.TeamService
 	notifications *application.NotificationService
 	database      *sql.DB
+	exports       issueExportAPI
 }
 
 func (apiModule) Name() string { return "api" }
@@ -49,11 +55,17 @@ func (module apiModule) Register(registrar *vial.Registrar) error {
 
 	dashboardAPI{views: dashboardViews}.register(public)
 	registrar.Health("/health/live")
-	registrar.Readiness("/health/ready", func(ctx context.Context) error { return module.database.PingContext(ctx) })
+	registrar.Readiness("/health/ready", func(ctx context.Context) error {
+		if err := module.database.PingContext(ctx); err != nil {
+			return err
+		}
+		return module.exports.executor.Ready(ctx)
+	})
 	authAPI{users: module.users}.register(public, protected, limited)
 	usersAPI{users: module.users}.register(public, protected, admin, limited)
 	teamsAPI{teams: module.teams, users: module.users}.register(protected)
 	issuesAPI{issues: module.issues}.register(protected)
+	module.exports.register(protected)
 	notificationsAPI{notifications: module.notifications, users: module.users, hub: notificationHub}.register(protected)
 	registrar.Go("notifications", notificationBroadcaster(module.notifications, notificationHub))
 	return nil

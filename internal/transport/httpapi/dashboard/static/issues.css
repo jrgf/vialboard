@@ -201,4 +201,35 @@
 .row-action.danger { width: 58px; color: #8c4a45; background: #fff8f7; border-color: #f0dedb; }
 
 .row-action.danger:hover { color: var(--danger); background: #fff0ee; border-color: #f1d3cf; }
+.workspace-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.export-status {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.export-status[hidden] {
+  display: none;
+}
+
+.export-status p {
+  margin: 0.25rem 0 0;
+}
+
+.export-status progress {
+  grid-column: 1 / -1;
+  width: 100%;
+}
 

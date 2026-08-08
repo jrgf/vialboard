@@ -17,8 +17,8 @@ github.com/jinzhu/inflection v1.0.0 h1:K317FqzuhWc8YvSVlFMCCUb36O/S9MCKRDI7QkRKD
 github.com/jinzhu/inflection v1.0.0/go.mod h1:h+uFLlag+Qp1Va5pdKtLDYj+kHp5pxUVkryuEj+Srlc=
 github.com/jinzhu/now v1.1.5 h1:/o9tlHleP7gOFmsnYNz3RGnqzefHA47wQpKrrdTIwXQ=
 github.com/jinzhu/now v1.1.5/go.mod h1:d3SSVoowX0Lcu0IBviAWJpolVfI5UJVZZ7cO71lE/z8=
-github.com/jrgf/go-vial v0.15.0 h1:7oX3Ipcnn+9Mron5Hfz4WSm6joS8iRJNq0sI6NOWzRE=
-github.com/jrgf/go-vial v0.15.0/go.mod h1:umlKIWTXp6tToJ/Nse/4KzatjsZWUKI20XYk1TZV9aI=
+github.com/jrgf/go-vial v0.16.0 h1:iO0LhZ5QNwG3sYR+8cfUPE13W3/9jBKYkVemLUTpxjc=
+github.com/jrgf/go-vial v0.16.0/go.mod h1:umlKIWTXp6tToJ/Nse/4KzatjsZWUKI20XYk1TZV9aI=
 github.com/mattn/go-isatty v0.0.23 h1:cYwCQTQf3HB6xUC+BtyCLZNr7IzbOmoZbmssVNzSyiQ=
 github.com/mattn/go-isatty v0.0.23/go.mod h1:nMCL3Zebbrt45jsMDgnfIwz6ydEQApk5oEI3HqDio6A=
 github.com/mattn/go-sqlite3 v1.14.22 h1:2gZY6PC6kBnID23Tichd1K+Z0oS6nE/XwU+Vz/5o4kU=

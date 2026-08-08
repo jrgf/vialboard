@@ -1,8 +1,8 @@
 import { elements, state } from "./core.js";
 import { logout, setAuthMode, showAuth, showDashboard, submitAuth } from "./auth.js";
 import {
-  addComment, changeIssueTeam, changePage, closeIssueDialog, handleIssueAction, loadBoard, loadMembers,
-  openCreateDialog, openIssueByID, saveIssue
+  addComment, cancelIssueExport, changeIssueTeam, changePage, closeIssueDialog, handleIssueAction,
+  loadBoard, loadMembers, openCreateDialog, openIssueByID, saveIssue, startIssueExport, stopIssueExport
 } from "./issues.js";
 import {
   changeUserPage, changeUserRole, closePasswordDialog, closeUserDialog, createUser, loadUsers,
@@ -29,6 +29,8 @@ elements["teams-nav"].addEventListener("click", () => showWorkspace("teams"));
 elements["users-nav"].addEventListener("click", () => showWorkspace("users"));
 elements["notifications-nav"].addEventListener("click", () => showWorkspace("notifications"));
 elements["new-issue-button"].addEventListener("click", openCreateDialog);
+elements["export-issues-button"].addEventListener("click", startIssueExport);
+elements["cancel-export-button"].addEventListener("click", cancelIssueExport);
 elements["new-user-button"].addEventListener("click", openUserDialog);
 elements["new-team-button"].addEventListener("click", openTeamDialog);
 elements["new-team-user-button"].addEventListener("click", openTeamUserDialog);
@@ -124,6 +126,7 @@ window.addEventListener("notification-navigation", async (event) => {
   }
 });
 window.addEventListener("pagehide", stopNotifications);
+window.addEventListener("pagehide", stopIssueExport);
 
 if (state.session) {
   showDashboard();

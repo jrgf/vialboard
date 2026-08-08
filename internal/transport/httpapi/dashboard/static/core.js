@@ -3,7 +3,8 @@ export const pageSize = 8;
 export const elements = Object.fromEntries([
   "auth-view", "app-view", "auth-form", "auth-title", "auth-copy", "auth-error", "auth-submit",
   "username", "password", "password-confirmation-label", "password-confirmation", "logout-button", "change-password-button", "user-name", "user-role", "user-avatar", "board-copy",
-  "new-issue-button", "search-input", "status-filter", "priority-filter", "sort-filter", "issue-list", "empty-state", "result-copy", "total-count",
+  "new-issue-button", "export-issues-button", "export-status", "export-copy", "export-progress", "cancel-export-button",
+  "search-input", "status-filter", "priority-filter", "sort-filter", "issue-list", "empty-state", "result-copy", "total-count",
   "open-count", "closed-count", "nav-count", "sidebar-pulse", "sidebar-pulse-copy", "page-copy",
   "previous-page", "next-page", "issue-dialog", "issue-form", "dialog-kicker", "dialog-title",
   "close-dialog", "cancel-dialog", "issue-title", "issue-description", "issue-status", "issue-priority",
@@ -40,6 +41,11 @@ export const state = {
   notificationUnread: 0,
   notificationAbort: null,
   notificationReconnectTimer: null,
+  issueExport: null,
+  issueExportAbort: null,
+  issueExportPollTimer: null,
+  issueExportIdempotencyKey: null,
+  issueExportCompletionHandled: false,
   selectedTeamID: "",
   editingID: null,
   passwordUserID: null,
@@ -81,6 +87,8 @@ export function saveSession(session) {
 export function clearSession() {
 	state.notificationAbort?.abort();
 	window.clearTimeout(state.notificationReconnectTimer);
+	state.issueExportAbort?.abort();
+	window.clearTimeout(state.issueExportPollTimer);
 	state.session = null;
   state.issues = [];
   state.users = [];
@@ -93,6 +101,14 @@ export function clearSession() {
   state.notificationUnread = 0;
   state.notificationAbort = null;
   state.notificationReconnectTimer = null;
+  state.issueExport = null;
+  state.issueExportAbort = null;
+  state.issueExportPollTimer = null;
+  state.issueExportIdempotencyKey = null;
+  state.issueExportCompletionHandled = false;
+  elements["export-status"].hidden = true;
+  elements["export-issues-button"].disabled = false;
+  elements["export-issues-button"].textContent = "Export CSV";
   state.selectedTeamID = "";
   removeStoredSession();
 }
