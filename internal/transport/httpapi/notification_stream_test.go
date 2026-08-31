@@ -1,7 +1,7 @@
 package httpapi
 
 import (
-	"fmt"
+	"errors"
 	"io"
 	"net/http/httptest"
 	"testing"
@@ -10,19 +10,23 @@ import (
 	vial "github.com/jrgf/go-vial"
 )
 
-func TestNotificationStreamCanDisableWriteTimeout(t *testing.T) {
+func TestEventStreamRefreshesWriteDeadline(t *testing.T) {
 	app := vial.New()
 	app.Get("/stream", func(c *vial.Context) error {
-		if err := disableWriteDeadline(c.Response()); err != nil {
+		write := func(value string) error {
+			if !writeEventStream(c.Response(), func() error {
+				_, err := io.WriteString(c.Response(), value)
+				return err
+			}) {
+				return errors.New("stream write failed")
+			}
+			return nil
+		}
+		if err := write("start"); err != nil {
 			return err
 		}
-		if _, err := fmt.Fprint(c.Response(), "start"); err != nil {
-			return err
-		}
-		c.Response().(interface{ Flush() }).Flush()
 		time.Sleep(75 * time.Millisecond)
-		_, err := fmt.Fprint(c.Response(), "done")
-		return err
+		return write("done")
 	})
 
 	server := httptest.NewUnstartedServer(app)

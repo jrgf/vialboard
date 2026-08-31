@@ -1,9 +1,10 @@
 import { elements, state } from "./core.js";
 import { logout, setAuthMode, showAuth, showDashboard, submitAuth } from "./auth.js";
 import {
-  addComment, cancelIssueExport, changeIssueTeam, changePage, closeIssueDialog, handleIssueAction,
-  loadBoard, loadMembers, openCreateDialog, openIssueByID, saveIssue, startIssueExport, stopIssueExport
+  addComment, changeIssueTeam, changePage, closeIssueDialog, handleIssueAction,
+  loadBoard, loadMembers, openCreateDialog, openIssueByID, saveIssue
 } from "./issues.js";
+import { cancelIssueExport, startIssueExport, stopIssueExport } from "./exports.js";
 import {
   changeUserPage, changeUserRole, closePasswordDialog, closeUserDialog, createUser, loadUsers,
   openPasswordDialog, openUserDialog, savePassword, toggleUserAccess

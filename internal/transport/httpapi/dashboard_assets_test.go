@@ -8,10 +8,11 @@ import (
 )
 
 func TestDashboardModulesAreEmbedded(t *testing.T) {
-	assets := []string{
-		"app.js", "core.js", "auth.js", "issues.js", "users.js", "teams.js", "notifications.js",
-		"styles.css", "base.css", "auth.css", "shell.css", "issues.css", "users.css", "teams.css", "notifications.css", "dialogs.css", "responsive.css",
+	scripts := []string{
+		"app.js", "core.js", "auth.js", "issues.js", "exports.js", "users.js", "teams.js", "notifications.js",
 	}
+	stylesheets := []string{"base.css", "auth.css", "shell.css", "issues.css", "exports.css", "users.css", "teams.css", "notifications.css", "dialogs.css", "responsive.css"}
+	assets := append(append(scripts, "styles.css"), stylesheets...)
 	for _, asset := range assets {
 		if _, err := fs.Stat(dashboardAssets, asset); err != nil {
 			t.Fatalf("dashboard asset %q: %v", asset, err)
@@ -22,7 +23,7 @@ func TestDashboardModulesAreEmbedded(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, stylesheet := range assets[8:] {
+	for _, stylesheet := range stylesheets {
 		if !strings.Contains(string(styles), `"./`+stylesheet+`"`) {
 			t.Fatalf("styles.css does not import %s", stylesheet)
 		}
@@ -54,7 +55,7 @@ func TestDashboardModulesAreEmbedded(t *testing.T) {
 		registered[string(match[1])] = true
 	}
 	usage := regexp.MustCompile(`elements\["([^"]+)"\]`)
-	for _, asset := range assets[:7] {
+	for _, asset := range scripts {
 		script, err := fs.ReadFile(dashboardAssets, asset)
 		if err != nil {
 			t.Fatal(err)

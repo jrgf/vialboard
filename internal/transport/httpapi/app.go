@@ -8,6 +8,7 @@ import (
 	vial "github.com/jrgf/go-vial"
 	"github.com/jrgf/go-vial/contrib/asyncpostgres"
 	"github.com/jrgf/go-vial/middleware"
+	"github.com/jrgf/go-vial/sse"
 	"github.com/jrgf/vialboard/internal/application"
 	"github.com/jrgf/vialboard/internal/domain"
 )
@@ -16,7 +17,7 @@ func New(issues *application.IssueService, users *application.UserService, teams
 	options = append([]vial.Option{vial.WithDisallowUnknownJSONFields(true)}, options...)
 	app := vial.New(options...)
 	executor := asyncpostgres.New(database)
-	exports := issueExportAPI{issues: issues, users: users, database: database, executor: executor}
+	exports := issueExportAPI{issues: issues, users: users, store: issueExportStore{database: database}, executor: executor}
 	executor.Handle(issueExportOperation, exports.generate)
 	app.Async(executor)
 	if err := app.Register(apiModule{issues: issues, users: users, teams: teams, notifications: notifications, database: database, exports: exports}); err != nil {
@@ -44,9 +45,29 @@ func (module apiModule) Register(registrar *vial.Registrar) error {
 	)
 
 	authenticated := authenticate(module.users)
-	limited := newRequestLimiter(10, time.Minute).middleware
+	limited, err := middleware.RateLimit(middleware.RateLimitConfig{
+		Requests: 10,
+		Window:   time.Minute,
+		Key: func(context *vial.Context) (string, error) {
+			address, err := context.ClientIP()
+			if err != nil {
+				return "", vial.BadRequest("invalidClientIP", "Invalid client address")
+			}
+			return address.String() + " " + context.Request().URL.Path, nil
+		},
+	})
+	if err != nil {
+		return err
+	}
 	// ponytail: live fan-out is per process; replace the hub with Redis pub/sub before running multiple replicas.
-	notificationHub := newNotificationHub()
+	notificationHub, err := sse.NewHub(sse.HubConfig{SlowConsumer: sse.DropEvent})
+	if err != nil {
+		return err
+	}
+	registrar.OnStop(func(context.Context) error {
+		notificationHub.Close()
+		return nil
+	})
 	public := registrar.Group("")
 	protected := registrar.Group("")
 	protected.Use(authenticated)

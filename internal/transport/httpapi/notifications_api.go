@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -10,6 +9,7 @@ import (
 	"time"
 
 	vial "github.com/jrgf/go-vial"
+	"github.com/jrgf/go-vial/sse"
 	"github.com/jrgf/vialboard/internal/application"
 	"github.com/jrgf/vialboard/internal/domain"
 	"github.com/jrgf/vialboard/internal/transport/httpapi/dto"
@@ -18,7 +18,7 @@ import (
 type notificationsAPI struct {
 	notifications *application.NotificationService
 	users         *application.UserService
-	hub           *notificationHub
+	hub           *sse.Hub
 }
 
 func (api notificationsAPI) register(group *vial.Group) {
@@ -80,54 +80,48 @@ func (api notificationsAPI) stream(c *vial.Context) error {
 	}
 	parts := strings.Fields(c.Request().Header.Get("Authorization"))
 	token := parts[1]
-	stream, unsubscribe := api.hub.subscribe(actor.ID)
-	defer unsubscribe()
+	stream := api.hub.SubscribeTopic(c.Request().Context(), actor.ID)
 
 	response := c.Response()
-	if err := disableWriteDeadline(response); err != nil {
-		return fmt.Errorf("disable notification stream write deadline: %w", err)
-	}
 	response.Header().Set("Content-Type", "text/event-stream")
 	response.Header().Set("Cache-Control", "no-cache, no-store")
 	response.Header().Set("Connection", "keep-alive")
 	response.Header().Set("X-Accel-Buffering", "no")
-	if _, err := fmt.Fprint(response, "retry: 2000\n\n"); err != nil {
+	if !writeEventStream(response, func() error {
+		_, err := fmt.Fprint(response, "retry: 2000\n\n")
+		return err
+	}) {
 		return nil
 	}
-	response.(http.Flusher).Flush()
 
-	heartbeat := time.NewTicker(15 * time.Second)
+	heartbeat := time.NewTicker(sse.DefaultHeartbeat)
 	defer heartbeat.Stop()
 	for {
 		select {
 		case <-c.Request().Context().Done():
 			return nil
-		case notification := <-stream:
-			if !api.sessionActive(c, token) {
+		case event, open := <-stream:
+			if !open || !api.sessionActive(c, token) {
 				return nil
 			}
-			payload, err := json.Marshal(toNotificationResponse(notification))
-			if err != nil {
-				return err
-			}
-			if _, err := fmt.Fprintf(response, "data: %s\n\n", payload); err != nil {
+			if !writeEventStream(response, func() error { return sse.WriteEvent(response, event) }) {
 				return nil
 			}
-			response.(http.Flusher).Flush()
 		case <-heartbeat.C:
 			if !api.sessionActive(c, token) {
 				return nil
 			}
-			if _, err := fmt.Fprint(response, ": heartbeat\n\n"); err != nil {
+			if !writeEventStream(response, func() error { return sse.WriteComment(response, "heartbeat") }) {
 				return nil
 			}
-			response.(http.Flusher).Flush()
 		}
 	}
 }
 
-func disableWriteDeadline(response http.ResponseWriter) error {
-	return http.NewResponseController(response).SetWriteDeadline(time.Time{})
+func writeEventStream(response http.ResponseWriter, block func() error) bool {
+	controller := http.NewResponseController(response)
+	err := controller.SetWriteDeadline(time.Now().Add(sse.DefaultWriteTimeout))
+	return (err == nil || errors.Is(err, http.ErrNotSupported)) && block() == nil && controller.Flush() == nil
 }
 
 func (api notificationsAPI) sessionActive(c *vial.Context, token string) bool {
